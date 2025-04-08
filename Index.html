@@ -1,0 +1,111 @@
+Moneytracker.html <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 10px; font-size: 16px; }
+        h1 { font-size: 24px; }
+        .form { margin-bottom: 20px; }
+        label { display: block; margin: 5px 0; }
+        input, select { width: 100%; padding: 5px; margin: 5px 0; }
+        button { padding: 10px; width: 100%; background-color: #4CAF50; color: white; border: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 5px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Money Tracker</h1>
+    
+    <div class="form">
+        <h3>Add Transaction</h3>
+        <label>Type: 
+            <select id="type">
+                <option value="lent">I Lent</option>
+                <option value="borrowed">I Borrowed</option>
+            </select>
+        </label>
+        <label>Amount: <input type="number" id="amount" step="0.01" min="0"></label>
+        <label>Person: <input type="text" id="person"></label>
+        <label>Date: <input type="date" id="date"></label>
+        <label>Interest Rate (%): <input type="number" id="interest" step="0.1" min="0" value="0"></label>
+        <button onclick="addTransaction()">Add Transaction</button>
+    </div>
+
+    <h3>Transactions</h3>
+    <table id="transactionTable">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Person</th>
+                <th>Date</th>
+                <th>Rate</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody id="transactionBody"></tbody>
+    </table>
+
+    <script>
+        let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+
+        function addTransaction() {
+            const type = document.getElementById("type").value;
+            const amount = parseFloat(document.getElementById("amount").value);
+            const person = document.getElementById("person").value;
+            const date = document.getElementById("date").value;
+            const interest = parseFloat(document.getElementById("interest").value);
+
+            if (!amount || !person || !date) {
+                alert("Please fill in all fields!");
+                return;
+            }
+
+            const transaction = { type, amount, person, date, interest };
+            transactions.push(transaction);
+            localStorage.setItem("transactions", JSON.stringify(transactions));
+            updateTable();
+            clearForm();
+        }
+
+        function calculateInterest(amount, interestRate, startDate) {
+            const today = new Date();
+            const start = new Date(startDate);
+            const years = (today - start) / (1000 * 60 * 60 * 24 * 365);
+            const total = amount * Math.pow(1 + interestRate / 100, years);
+            return total.toFixed(2);
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById("transactionBody");
+            tbody.innerHTML = "";
+            transactions.forEach(t => {
+                const row = document.createElement("tr");
+                const total = calculateInterest(t.amount, t.interest, t.date);
+                row.innerHTML = `
+                    <td>${t.type === "lent" ? "Lent" : "Borrowed"}</td>
+                    <td>${t.amount.toFixed(2)}</td>
+                    <td>${t.person}</td>
+                    <td>${t.date}</td>
+                    <td>${t.interest}</td>
+                    <td>${total}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function clearForm() {
+            document.getElementById("amount").value = "";
+            document.getElementById("person").value = "";
+            document.getElementById("date").value = "";
+            document.getElementById("interest").value = "0";
+        }
+
+        updateTable(); // Load existing transactions on start
+    </script>
+</body>
+</html>
+
